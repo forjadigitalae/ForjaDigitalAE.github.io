@@ -2191,7 +2191,7 @@ function handleFormSubmit(form) {
     // Validación básica
     const requiredFields = form.querySelectorAll('[required]');
     let isValid = true;
-    
+   
     requiredFields.forEach(field => {
         if (!field.value) {
             isValid = false;
@@ -2200,28 +2200,76 @@ function handleFormSubmit(form) {
             field.style.borderColor = '#ddd';
         }
     });
-    
-    // Validar términos y condiciones
+   
     const terminos = form.querySelector('[name="terminos"]');
     if (terminos && !terminos.checked) {
         isValid = false;
         alert('Debes aceptar los términos y condiciones');
         return;
     }
-    
+   
     if (!isValid) {
         alert('Por favor, completa todos los campos obligatorios (*)');
         return;
     }
-    
+   
     // Recopilar datos del formulario
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
-    
-    console.log('Datos del formulario:', data);
-    
-    // Simular envío (aquí integrarías con tu backend)
-    simulateFormSubmission(data);
+   
+    // Enviar a Google Sheets
+    submitToGoogleSheets(data);
+}
+
+function submitToGoogleSheets(data) {
+    const submitBtn = document.querySelector('#contactForm button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    submitBtn.disabled = true;
+   
+    // REEMPLAZA ESTA URL CON LA URL DE TU WEB APP
+    const scriptURL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
+   
+    fetch(scriptURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(() => {
+        // Éxito
+        closeContactPopup();
+       
+        const successMessage = document.getElementById('successMessage');
+        if (successMessage) {
+            successMessage.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+       
+        // Restaurar botón
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+       
+        // Limpiar formulario
+        document.getElementById('contactForm').reset();
+       
+        // Tracking (opcional)
+        if (typeof trackEvent === 'function') {
+            trackEvent('form_submission', {
+                empresa: data.empresa,
+                sector: data.sector
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Hubo un error al enviar el formulario. Por favor, intenta de nuevo o contáctanos directamente.');
+       
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
 }
 
 function simulateFormSubmission(data) {
