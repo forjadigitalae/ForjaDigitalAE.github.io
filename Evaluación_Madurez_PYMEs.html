@@ -937,18 +937,35 @@
 
         document.getElementById('registrationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Generar ID único para la evaluación
+            const evaluationId = generateUUID();
+            
             appState.companyData = {
-                id: generateUUID(), timestamp: new Date().toISOString(),
-                name: document.getElementById('companyName').value, nit: document.getElementById('companyNit').value,
-                sector: document.getElementById('companySector').value, size: document.getElementById('companySize').value,
-                years: parseInt(document.getElementById('companyYears').value), location: document.getElementById('companyLocation').value,
-                contact: { name: document.getElementById('contactName').value, role: document.getElementById('contactRole').value, email: document.getElementById('contactEmail').value, phone: document.getElementById('contactPhone').value },
-                website: document.getElementById('companyWebsite').value, consent: appState.consent
+                id: evaluationId,
+                timestamp: new Date().toISOString(),
+                name: document.getElementById('companyName').value,
+                nit: document.getElementById('companyNit').value,
+                sector: document.getElementById('companySector').value,
+                size: document.getElementById('companySize').value,
+                years: parseInt(document.getElementById('companyYears').value),
+                location: document.getElementById('companyLocation').value,
+                contact: {
+                    name: document.getElementById('contactName').value,
+                    role: document.getElementById('contactRole').value,
+                    email: document.getElementById('contactEmail').value,
+                    phone: document.getElementById('contactPhone').value
+                },
+                website: document.getElementById('companyWebsite').value,
+                consent: appState.consent
             };
             
             try {
                 showLoading('Guardando información de tu empresa...');
-                if(GOOGLE_SCRIPT_URL) await saveToGoogleSheets(appState.companyData, 'Companies');
+                
+                // Enviar a Google Sheets con el nuevo formato
+                await submitEvaluationToGoogleSheets(appState.companyData);
+                
                 hideLoading();
                 initializeEvaluation();
                 showSection('evaluation');
@@ -958,6 +975,45 @@
                 console.error('Error saving company data:', error);
             }
         });
+
+        // NUEVA FUNCIÓN: Enviar datos de evaluación a Google Sheets
+        async function submitEvaluationToGoogleSheets(companyData) {
+            // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON TU URL DE GOOGLE APPS SCRIPT
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxV6oR9z1Px-YnlbZXR-rJ04Kz-6g7A6DLMDGwg9E460EGuBnS2X5TEcScXtXN0zCrVqA/exec';
+            
+            const dataToSend = {
+                source: 'evaluation',  // Identificador para el formulario de evaluación
+                evaluationId: companyData.id,
+                companyName: companyData.name,
+                companyNit: companyData.nit,
+                companySector: companyData.sector,
+                companySize: companyData.size,
+                companyYears: companyData.years,
+                companyLocation: companyData.location,
+                companyWebsite: companyData.website || '',
+                contactName: companyData.contact.name,
+                contactRole: companyData.contact.role,
+                contactEmail: companyData.contact.email,
+                contactPhone: companyData.contact.phone,
+                consent: companyData.consent
+            };
+            
+            return fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(() => {
+                console.log('Datos de evaluación enviados exitosamente');
+            })
+            .catch(error => {
+                console.error('Error al enviar datos:', error);
+                throw error; // Re-lanzar el error para que lo capture el try-catch principal
+            });
+        }
 
        async function saveToGoogleSheets(data, sheetName) {
     	// Si la URL no está configurada, solo simulamos el guardado y salimos.

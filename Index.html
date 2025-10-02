@@ -2226,36 +2226,45 @@ function submitToGoogleSheets(data) {
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
     submitBtn.disabled = true;
-   
-    // REEMPLAZA ESTA URL CON LA URL DE TU WEB APP
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxV6oR9z1Px-YnlbZXR-rJ04Kz-6g7A6DLMDGwg9E460EGuBnS2X5TEcScXtXN0zCrVqA/exec';
-   
+    
+    // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON LA TUYA
+    const scriptURL = 'PEGA_AQUI_TU_URL_DE_GOOGLE_APPS_SCRIPT';
+    
+    // Agregar identificador de fuente
+    const dataToSend = {
+        source: 'contact',  // Identificador para el formulario web
+        nombre: data.nombre,
+        apellido: data.apellido,
+        email: data.email,
+        telefono: data.telefono,
+        empresa: data.empresa,
+        sector: data.sector,
+        empleados: data.empleados,
+        desafio: data.desafio,
+        objetivo: data.objetivo || ''
+    };
+    
     fetch(scriptURL, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(dataToSend)
     })
     .then(() => {
-        // Éxito
         closeContactPopup();
-       
+        
         const successMessage = document.getElementById('successMessage');
         if (successMessage) {
             successMessage.style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
-       
-        // Restaurar botón
+        
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-       
-        // Limpiar formulario
         document.getElementById('contactForm').reset();
-       
-        // Tracking (opcional)
+        
         if (typeof trackEvent === 'function') {
             trackEvent('form_submission', {
                 empresa: data.empresa,
@@ -2266,7 +2275,6 @@ function submitToGoogleSheets(data) {
     .catch(error => {
         console.error('Error:', error);
         alert('Hubo un error al enviar el formulario. Por favor, intenta de nuevo o contáctanos directamente.');
-       
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     });
