@@ -541,10 +541,7 @@
                             <label class="form-label">Nombre de la empresa *</label>
                             <input type="text" class="form-input" id="companyName" placeholder="Ej: TechStart SAS" required>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">NIT o Documento de Identificación *</label>
-                            <input type="text" class="form-input" id="companyNit" placeholder="123456789-1" required>
-                        </div>
+                        
                         <div class="form-group">
                             <label class="form-label">Sector Económico *</label>
                             <select class="form-select" id="companySector" required>
@@ -945,7 +942,6 @@
                 id: evaluationId,
                 timestamp: new Date().toISOString(),
                 name: document.getElementById('companyName').value,
-                nit: document.getElementById('companyNit').value,
                 sector: document.getElementById('companySector').value,
                 size: document.getElementById('companySize').value,
                 years: parseInt(document.getElementById('companyYears').value),
@@ -985,7 +981,6 @@
                 source: 'evaluation',  // Identificador para el formulario de evaluación
                 evaluationId: companyData.id,
                 companyName: companyData.name,
-                companyNit: companyData.nit,
                 companySector: companyData.sector,
                 companySize: companyData.size,
                 companyYears: companyData.years,
