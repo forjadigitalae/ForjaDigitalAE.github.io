@@ -1038,6 +1038,48 @@
     	return response.json();
 	}
 
+    // Nueva función para guardar respuestas de evaluación
+    async function saveAnswersToSheets() {
+            const scriptURL = 'PEGA_AQUI_TU_URL_DE_GOOGLE_APPS_SCRIPT';
+            
+            // Preparar todas las respuestas
+            const answersArray = [];
+            categories.forEach(category => {
+                category.questions.forEach(question => {
+                    const answer = appState.evaluationData.answers[question.id];
+                    if (answer) {
+                        answersArray.push({
+                            questionId: question.id,
+                            questionText: question.text,
+                            category: category.name,
+                            value: answer
+                        });
+                    }
+                });
+            });
+            
+            const dataToSend = {
+                action: 'saveAnswers',
+                evaluationId: appState.companyData.id,
+                companyName: appState.companyData.name,
+                answers: answersArray,
+                finalScore: appState.evaluationData.totalScore,
+                maturityLevel: appState.evaluationData.maturityLevel.level
+            };
+            
+            try {
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend)
+                });
+                console.log('Respuestas guardadas exitosamente');
+            } catch (error) {
+                console.error('Error guardando respuestas:', error);
+            }
+    }
+
         function initializeEvaluation() {
             appState.evaluationData.currentCategory = 0;
             appState.evaluationData.currentQuestion = 0;
@@ -1132,26 +1174,33 @@
 
         async function nextQuestion() {
             const category = categories[appState.evaluationData.currentCategory];
+            
             if (appState.evaluationData.currentQuestion < category.questions.length - 1) {
                 appState.evaluationData.currentQuestion++;
             } else if (appState.evaluationData.currentCategory < categories.length - 1) {
                 appState.evaluationData.currentCategory++;
                 appState.evaluationData.currentQuestion = 0;
             } else {
+                // Evaluación completada
                 try {
                     showLoading('Calculando resultados...');
                     await calculateResults();
+                    
+                    showLoading('Guardando resultados en el servidor...');
+                    await saveAnswersToSheets();
+                    
                     hideLoading();
                     showSection('results');
-                    showLoading('Guardando resultados...');
-                    if(GOOGLE_SCRIPT_URL) await saveEvaluationResults();
-                    hideLoading();
+                    return;
                 } catch (error) {
                     hideLoading();
-                    showToast('Error al calcular resultados.', 'error');
+                    showToast('Error al procesar resultados. Los resultados se mostrarán de todas formas.', 'error');
+                    console.error('Error:', error);
+                    showSection('results');
+                    return;
                 }
-                return;
             }
+            
             renderCategoryProgress();
             renderCurrentQuestion();
         }
