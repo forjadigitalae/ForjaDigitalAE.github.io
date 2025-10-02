@@ -515,7 +515,7 @@
             </div>
             <div class="modal-body">
                 <div style="max-height: 60vh; overflow-y: auto;">
-                    <p>Política de Privacidad
+                    <p> <h3>Política de Privacidad</h3>
                         1. Información que recopilamos
                         En ForjaDigitalAE recopilamos información que usted nos proporciona directamente cuando:
 
@@ -535,7 +535,7 @@
 
                         4. Sus derechos
                         Usted tiene derecho a acceder, rectificar, actualizar o solicitar la eliminación de su información personal contactándonos en forjadigitalae@gmail.com</p>
-                    <p>Política de Gestión de Datos
+                    <p><h3>Política de Gestión de Datos</h3>
                         Recopilación de Datos
                         ForjaDigitalAE recopila y procesa datos personales únicamente para fines legítimos relacionados con nuestros servicios de consultoría empresarial.
 
@@ -1076,45 +1076,53 @@
 
     // Nueva función para guardar respuestas de evaluación
     async function saveAnswersToSheets() {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxV6oR9z1Px-YnlbZXR-rJ04Kz-6g7A6DLMDGwg9E460EGuBnS2X5TEcScXtXN0zCrVqA/exec';
-            
-            // Preparar todas las respuestas
-            const answersArray = [];
-            categories.forEach(category => {
-                category.questions.forEach(question => {
-                    const answer = appState.evaluationData.answers[question.id];
-                    if (answer) {
-                        answersArray.push({
-                            questionId: question.id,
-                            questionText: question.text,
-                            category: category.name,
-                            value: answer
-                        });
-                    }
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxV6oR9z1Px-YnlbZXR-rJ04Kz-6g7A6DLMDGwg9E460EGuBnS2X5TEcScXtXN0zCrVqA/exec';
+    
+    // Preparar todas las respuestas con información de categoría
+    const answersArray = [];
+    const categoryScoresObject = {};
+    
+    categories.forEach(category => {
+        // Guardar el score de cada categoría
+        categoryScoresObject[category.id] = appState.evaluationData.categoryScores[category.id] || 0;
+        
+        category.questions.forEach(question => {
+            const answer = appState.evaluationData.answers[question.id];
+            if (answer) {
+                answersArray.push({
+                    questionId: question.id,
+                    questionText: question.text,
+                    category: category.name,
+                    categoryId: category.id,  // Nuevo campo
+                    value: answer
                 });
-            });
-            
-            const dataToSend = {
-                action: 'saveAnswers',
-                evaluationId: appState.companyData.id,
-                companyName: appState.companyData.name,
-                answers: answersArray,
-                finalScore: appState.evaluationData.totalScore,
-                maturityLevel: appState.evaluationData.maturityLevel.level
-            };
-            
-            try {
-                await fetch(scriptURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToSend)
-                });
-                console.log('Respuestas guardadas exitosamente');
-            } catch (error) {
-                console.error('Error guardando respuestas:', error);
             }
+        });
+    });
+    
+    const dataToSend = {
+        action: 'saveAnswers',
+        evaluationId: appState.companyData.id,
+        companyName: appState.companyData.name,
+        answers: answersArray,
+        categoryScores: categoryScoresObject,  // Nuevo campo
+        finalScore: appState.evaluationData.totalScore,
+        maturityLevel: appState.evaluationData.maturityLevel.level
+    };
+    
+    try {
+        await fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSend)
+        });
+        console.log('Respuestas guardadas exitosamente con puntajes por categoria');
+    } catch (error) {
+        console.error('Error guardando respuestas:', error);
     }
+}
+
 
         function initializeEvaluation() {
             appState.evaluationData.currentCategory = 0;
